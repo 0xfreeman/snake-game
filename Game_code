@@ -1,0 +1,76 @@
+#First, we import the necessary libraries:
+
+
+import random
+import curses
+#Next, we define some constants for the game's dimensions and settings:
+
+SCREEN_WIDTH = 41
+SCREEN_HEIGHT = 21
+SNAKE_START_SIZE = 3
+APPLE_CHAR = 'A'
+SNAKE_CHAR = 'O'
+#Now, we can create our Game class:
+
+
+class Game:
+    def __init__(self):
+        self.s = curses.initscr()
+        curses.curs_set(False)
+        self.s.nodelay(True)
+        self.s.timeout(100)
+        self.w = self.s.subwin(SCREEN_HEIGHT, SCREEN_WIDTH, 0, 0)
+        self.w.keypad(True)
+        self.snk_x = [SCREEN_WIDTH // 4 for _ in range(SNAKE_START_SIZE)]
+        self.snk_y = [SCREEN_HEIGHT // 2 for _ in range(SNAKE_START_SIZE)]
+        self.direction = (0, 1)
+        self.apple_x = random.randint(0, SCREEN_WIDTH - 1)
+        self.apple_y = random.randint(0, SCREEN_HEIGHT - 1)
+        self.score = 0
+
+    def mainloop(self):
+        while True:
+            next_key = self.w.getch()
+            key = self.direction if next_key == -1 else next_key
+
+            if key == ord('q'):
+                break
+
+            self.process_input(key)
+            self.update_snake()
+            self.draw()
+
+            if self.check_collision():
+                break
+
+            self.check_apple_collision()
+
+        curses.endwin()
+        print(f'Final score: {self.score}')
+
+
+
+    def process_input(self, key):
+        if key == curses.KEY_UP:
+            self.direction = (0, -1)
+        elif key == curses.KEY_DOWN:
+            self.direction = (0, 1)
+        elif key == curses.KEY_LEFT:
+            self.direction = (-1, 0)
+        elif key == curses.KEY_RIGHT:
+            self.direction = (1, 0)
+
+    def update_snake(self):
+        head_x, head_y = self.snk_x[0], self.snk_y[0]
+        self.snk_x.insert(0, head_x + self.direction[0])
+        self.snk_y.insert(0, head_y + self.direction[1])
+        self.snk_x.pop()
+        self.snk_y.pop()
+
+    def draw(self):
+        self.w.clear()
+        self.w.addch(self.apple_y, self.apple_x, APPLE_CHAR)
+        for x, y in zip(self.snk_x, self.snk_y):
+            self.w.addch(y, x, SNAKE_CHAR)
+        self.w.addstr(0, 2, f'Score: {self.score}')
+        self.w.refresh()
